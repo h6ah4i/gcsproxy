@@ -22,6 +22,7 @@ var (
 	verbose      = flag.Bool("v", false, "Show access log")
 	credentials  = flag.String("c", "", "The path to the keyfile. If not present, client will use your default application credentials.")
 	defaultIndex = flag.String("i", "", "The default index file to serve.")
+	sourceBucket = flag.String("s", "", "The source bucket name. If not present, bucket name will be extracted from the path.")
 )
 
 var client *storage.Client
@@ -179,7 +180,16 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/_health", wrapper(healthCheck)).Methods("GET", "HEAD")
-	r.HandleFunc("/{bucket:[0-9a-zA-Z-_.]+}/{object:.*}", wrapper(proxy)).Methods("GET", "HEAD")
+	if *sourceBucket != "" {
+		w := func(writer http.ResponseWriter, request *http.Request) {
+			params := mux.Vars(request)
+			params["bucket"] = *sourceBucket
+			wrapper(proxy)(writer, request)
+		}
+		r.HandleFunc("/{object:.*}", w).Methods("GET", "HEAD")
+	} else {
+		r.HandleFunc("/{bucket:[0-9a-zA-Z-_.]+}/{object:.*}", wrapper(proxy)).Methods("GET", "HEAD")
+	}
 
 	log.Printf("[service] listening on %s", *bind)
 	if err := http.ListenAndServe(*bind, r); err != nil {
