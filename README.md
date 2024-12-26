@@ -32,16 +32,22 @@ Usage of gcsproxy:
         The path to the keyfile. If not present, client will use your default application credentials.
   -i string
         The default index file to serve.
+  -s string
+        The source bucket name. If not present, bucket name will be extracted from the path.
   -v    Show access log
 
 ```
 
-The gcsproxy routing configuration is shown below.
+The default gcsproxy routing configuration is shown below.
 
-`"/{bucket:[0-9a-zA-Z-_.] +}/{object:. *}"`
+`"/{bucket:[0-9a-zA-Z-_.]+}/{object:.*}"`
 
 If you are running gcsproxy on localhost:8080 and you want to access the file `gs://test-bucket/your/file/path.txt` in GCS via gcsproxy,
 you can use the URL You can access the file via gcsproxy at the URL `http://localhost:8080/test-bucket/your/file/path.txt`.
+
+Specifying the `-s` option fixes the bucket name to the given value and following routing configuration is used instead.
+
+`"/{object:.*}"`
 
 If a default index file is specified and the target object does not exist, an attempt is made to retrieve the object specified in the default index file.
 
